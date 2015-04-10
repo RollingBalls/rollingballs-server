@@ -43,9 +43,11 @@ func Puzzles(coordinatesAndDistance types.CoordinatesAndDistance) ([]map[string]
 	}
 
 	for _, point := range points {
-		puzzleText := point.Puzzles[rand.Intn(len(point.Puzzles))]
-		puzzle := map[string]string{"id": point.Id.Hex(), "text": puzzleText}
-		puzzles = append(puzzles, puzzle)
+		if len(point.Puzzles) > 0 {
+			puzzleText := point.Puzzles[rand.Intn(len(point.Puzzles))]
+			puzzle := map[string]string{"id": point.Id.Hex(), "text": puzzleText}
+			puzzles = append(puzzles, puzzle)
+		}
 	}
 
 	return puzzles, nil
