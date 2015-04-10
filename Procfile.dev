@@ -1,0 +1,3 @@
+web: godep go run main.go
+mongo: mongod --config /usr/local/etc/mongod.conf
+gulp: cd frontend && gulp
