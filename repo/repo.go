@@ -59,6 +59,18 @@ func Puzzles(coordinatesAndDistance types.CoordinatesAndDistance) ([]map[string]
 	return puzzles, nil
 }
 
+func POICoordinates(id string) (types.Coordinates, error) {
+	poiCollection := db.C("poi")
+	var poi types.POI
+	var coordinates types.Coordinates
+
+	if err := poiCollection.FindId(bson.ObjectIdHex(id)).One(&poi); err != nil {
+		return coordinates, err
+	}
+
+	return poi.Position, nil
+}
+
 func refreshOpenData() {
 
 	const CSV_URL = "https://docs.google.com/spreadsheets/d/1T02iEmlUdnqEv2gpq_Y200TywLEMoxjI2D2EaBp1c9w/export?gid=0&format=csv"

@@ -1,6 +1,7 @@
 package webserver
 
 import (
+	"github.com/RollingBalls/rollingballs-server/engine"
 	"github.com/RollingBalls/rollingballs-server/repo"
 	"github.com/RollingBalls/rollingballs-server/types"
 	"github.com/gin-gonic/gin"
@@ -52,10 +53,15 @@ func remainingTime(c *gin.Context) {
 func startGame(c *gin.Context) {
 	var submission GuessingSubmission
 	c.BindWith(&submission, binding.JSON)
+	engine := c.MustGet("engine").(*engine.Engine)
 
 	if submission.Id != "" {
-		// TODO: implement
-		c.JSON(http.StatusCreated, JSONObject{"seconds": 3600})
+		if coordinates, err := repo.POICoordinates(submission.Id); err != nil {
+			c.Fail(http.StatusBadRequest, err)
+		} else {
+			seconds := engine.StartGame(c.Request.Header.Get("X-Auth-Token"), coordinates)
+			c.JSON(http.StatusCreated, JSONObject{"seconds": seconds})
+		}
 	} else {
 		c.AbortWithStatus(http.StatusBadRequest)
 	}
