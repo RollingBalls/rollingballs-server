@@ -1,35 +1,18 @@
 package webserver
 
 import (
+	"github.com/RollingBalls/rollingballs-server/repo"
+	"github.com/RollingBalls/rollingballs-server/types"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"net/http"
 	"strconv"
 )
 
-// TODO: move these structs away
-type coordinates struct {
-	Lat float32
-	Lon float32
-}
-
-func (c coordinates) Valid() bool {
-	return c.Lat >= -90.0 && c.Lat <= 90.0 && c.Lon >= -180.0 && c.Lon <= 180.0
-}
-
-type coordinatesAndDistance struct {
-	*coordinates
-	Distance uint
-}
-
-func (c coordinatesAndDistance) Valid() bool {
-	return c.coordinates.Valid() && c.Lon <= 180.0
-}
-
 type JSONObject map[string]interface{}
 
 func puzzlesByPositionAndDistance(c *gin.Context) {
-	coordinates := coordinatesAndDistance{coordinates: &coordinates{}}
+	coordinates := types.CoordinatesAndDistance{Coordinates: &types.Coordinates{}}
 
 	if lat, err := strconv.ParseFloat(c.Request.URL.Query().Get("lat"), 32); err != nil {
 		c.Fail(http.StatusBadRequest, err)
@@ -51,8 +34,11 @@ func puzzlesByPositionAndDistance(c *gin.Context) {
 	}
 
 	if coordinates.Valid() {
-		// TODO: implement
-		c.JSON(http.StatusOK, make([]JSONObject, 0))
+		if puzzles, error := repo.Puzzles(coordinates); error != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		} else {
+			c.JSON(http.StatusOK, puzzles)
+		}
 	} else {
 		c.AbortWithStatus(http.StatusBadRequest)
 	}
@@ -83,7 +69,7 @@ func finishGame(c *gin.Context) {
 	var submission PositionSubmission
 	c.BindWith(&submission, binding.JSON)
 
-	coordinates := coordinates{submission.Lat, submission.Lon}
+	coordinates := types.Coordinates{submission.Lat, submission.Lon}
 
 	if coordinates.Valid() {
 		// TODO: implement
