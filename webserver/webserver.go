@@ -27,7 +27,7 @@ func Run(listen string) {
 		apiEndpoints.PUT("/finish", finishGame)
 	}
 
-	r.Use(static.Serve("/", static.LocalFile("static", false)))
+	r.Use(static.Serve("/", static.LocalFile("frontend/dist", false)))
 
 	if error := r.Run(listen); error != nil {
 		log.Fatal(error)
