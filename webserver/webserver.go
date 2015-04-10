@@ -13,7 +13,9 @@ func Run(listen string) {
 
 	r := gin.New()
 	r.Use(gin.Recovery())
-	r.Use(cors.Middleware(cors.Options{}))
+	r.Use(cors.Middleware(cors.Options{
+		AllowOrigins: []string{"*"},
+	}))
 
 	apiEndpoints := r.Group("/api/v1")
 	{
