@@ -6,5 +6,5 @@ type PositionSubmission struct {
 }
 
 type GuessingSubmission struct {
-	Id int `binding:"required"`
+	Id string `binding:"required"`
 }
