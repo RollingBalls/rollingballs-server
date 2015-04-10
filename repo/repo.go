@@ -1,17 +1,24 @@
 package repo
 
 import (
+	"encoding/csv"
+	"log"
+	"math/rand"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/RollingBalls/rollingballs-server/types"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"log"
-	"math/rand"
 )
 
 var db *mgo.Database
+var session *mgo.Session
 
 func init() {
-	session, err := mgo.Dial("localhost")
+	var err error
+	session, err = mgo.Dial("localhost")
 	if err != nil {
 		log.Fatal("Error connecting to mongo:", err)
 	}
@@ -19,6 +26,8 @@ func init() {
 	session.SetMode(mgo.Monotonic, true)
 
 	db = session.DB("rollingballs")
+
+	go refreshOpenData()
 }
 
 func Puzzles(coordinatesAndDistance types.CoordinatesAndDistance) ([]map[string]string, error) {
@@ -40,4 +49,52 @@ func Puzzles(coordinatesAndDistance types.CoordinatesAndDistance) ([]map[string]
 	}
 
 	return puzzles, nil
+}
+
+func refreshOpenData() {
+
+	const CSV_URL = "https://docs.google.com/spreadsheets/d/1T02iEmlUdnqEv2gpq_Y200TywLEMoxjI2D2EaBp1c9w/export?gid=0&format=csv"
+
+	for {
+		db = session.DB("rollingballs")
+		time.Sleep(1 * time.Second)
+
+		resp, err := http.Get(CSV_URL)
+		if err != nil {
+			log.Print("cannot fetch CSV", err)
+			continue
+		}
+
+		csv := csv.NewReader(resp.Body)
+		csv.Read() // skip first line
+
+		records, err := csv.ReadAll()
+		if err != nil {
+			log.Print("cannot fetch CSV", err)
+			continue
+		}
+
+		poiCollection := db.C("poi")
+		for _, r := range records {
+			// Skip records without lat/lon
+			name, lat, lon := r[0], r[1], r[2]
+			if lat == "" || lon == "" {
+				continue
+			}
+
+			latf, err := strconv.ParseFloat(lat, 32)
+			if err == nil {
+				panic(err)
+			}
+			lonf, err := strconv.ParseFloat(lon, 32)
+			if err == nil {
+				panic(err)
+			}
+
+			poiCollection.Upsert(bson.M{"name": name}, bson.M{"name": name, "lat": latf, "lon": lonf})
+		}
+
+		log.Println("CSV refreshed")
+		time.Sleep(5 * time.Minute)
+	}
 }
