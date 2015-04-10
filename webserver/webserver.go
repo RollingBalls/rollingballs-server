@@ -1,9 +1,11 @@
 package webserver
 
 import (
+	"log"
+
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
-	"log"
+	cors "github.com/tommy351/gin-cors"
 )
 
 func Run(listen string) {
@@ -11,6 +13,7 @@ func Run(listen string) {
 
 	r := gin.New()
 	r.Use(gin.Recovery())
+	r.Use(cors.Middleware(cors.Options{}))
 
 	apiEndpoints := r.Group("/api/v1")
 	{
