@@ -2,15 +2,15 @@ package repo
 
 import (
 	"encoding/csv"
+	"github.com/RollingBalls/rollingballs-server/types"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
-
-	"github.com/RollingBalls/rollingballs-server/types"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
 var db *mgo.Database
@@ -32,13 +32,19 @@ func init() {
 
 func Puzzles(coordinatesAndDistance types.CoordinatesAndDistance) ([]map[string]string, error) {
 	poiCollection := db.C("poi")
+
 	points := []types.POI{}
 	puzzles := []map[string]string{}
 
-	//where := bson.M{"$near": []float32{coordinatesAndDistance.Lat, coordinatesAndDistance.Lon}, "$maxDistance": coordinatesAndDistance.Distance}
+	where := bson.M{
+		"$geometry": bson.M{
+			"type":        "Point",
+			"coordinates": []float32{coordinatesAndDistance.Lon, coordinatesAndDistance.Lat},
+		},
+		"$maxDistance": coordinatesAndDistance.Distance,
+	}
 
-	if err := poiCollection.Find(nil).Select(bson.M{"puzzles": 1}).All(&points); err != nil {
-		log.Println(err)
+	if err := poiCollection.Find(bson.M{"position": bson.M{"$near": where}}).Select(bson.M{"puzzles": 1}).All(&points); err != nil {
 		return puzzles, err
 	}
 
@@ -77,19 +83,20 @@ func refreshOpenData() {
 		}
 
 		poiCollection := db.C("poi")
+
 		for _, r := range records {
 			// Skip records without lat/lon
-			name, lat, lon := r[0], r[1], r[2]
+			name, lat, lon := r[0], strings.Replace(r[1], ",", ".", -1), strings.Replace(r[2], ",", ".", -1)
 			if lat == "" || lon == "" {
 				continue
 			}
 
 			latf, err := strconv.ParseFloat(lat, 32)
-			if err == nil {
+			if err != nil {
 				panic(err)
 			}
 			lonf, err := strconv.ParseFloat(lon, 32)
-			if err == nil {
+			if err != nil {
 				panic(err)
 			}
 
@@ -100,10 +107,14 @@ func refreshOpenData() {
 			}
 
 			poiCollection.Upsert(bson.M{"name": name}, bson.M{
-				"name": name,
-				"lat":  latf, "lon": lonf,
-				"puzzles": puzzles,
+				"name":     name,
+				"position": bson.M{"lat": float32(latf), "lng": float32(lonf)},
+				"puzzles":  puzzles,
 			})
+		}
+
+		if err = poiCollection.EnsureIndex(mgo.Index{Key: []string{"$2dsphere:position"}}); err != nil {
+			log.Println(err)
 		}
 
 		log.Println("CSV refreshed")

@@ -5,8 +5,8 @@ import (
 )
 
 type Coordinates struct {
-	Lat float32
-	Lon float32
+	Lat float32 `json:"lat,omitempty" bson:"lat,omitempty`
+	Lon float32 `json:"lon,omitempty" bson:"lng,omitempty`
 }
 
 func (c Coordinates) Valid() bool {
@@ -23,11 +23,10 @@ func (c CoordinatesAndDistance) Valid() bool {
 }
 
 type POI struct {
-	Id      bson.ObjectId `json:"id,omitempty" bson:"_id,omitempty"`
-	Name    string        `json:"name,omitempty" bson:"name,omitempty`
-	Lat     float64       `json:"lat,omitempty" bson:"lat,omitempty`
-	Lon     float64       `json:"lon,omitempty" bson:"lon,omitempty`
-	Address string        `json:"address,omitempty" bson:"address,omitempty`
-	Phone   string        `json:"phone,omitempty" bson:"phone,omitempty`
-	Puzzles []string      `json:"puzzles,omitempty bson:"puzzles,omitempty`
+	Id       bson.ObjectId `json:"id,omitempty" bson:"_id,omitempty"`
+	Name     string        `json:"name,omitempty" bson:"name,omitempty`
+	Position Coordinates   `json:"position,omitempty" bson:"position,omitempty`
+	Address  string        `json:"address,omitempty" bson:"address,omitempty`
+	Phone    string        `json:"phone,omitempty" bson:"phone,omitempty`
+	Puzzles  []string      `json:"puzzles,omitempty bson:"puzzles,omitempty`
 }

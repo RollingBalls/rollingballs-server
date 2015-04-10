@@ -53,9 +53,9 @@ func startGame(c *gin.Context) {
 	var submission GuessingSubmission
 	c.BindWith(&submission, binding.JSON)
 
-	if submission.Id > 0 {
+	if submission.Id != "" {
 		// TODO: implement
-		c.JSON(http.StatusCreated, JSONObject{})
+		c.JSON(http.StatusCreated, JSONObject{"seconds": 3600})
 	} else {
 		c.AbortWithStatus(http.StatusBadRequest)
 	}
@@ -73,7 +73,7 @@ func finishGame(c *gin.Context) {
 
 	if coordinates.Valid() {
 		// TODO: implement
-		c.JSON(http.StatusOK, JSONObject{})
+		c.JSON(http.StatusOK, JSONObject{"win": true})
 	} else {
 		c.AbortWithStatus(http.StatusBadRequest)
 	}
