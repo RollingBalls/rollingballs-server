@@ -15,6 +15,7 @@ func Run(listen string) {
 	r.Use(gin.Recovery())
 	r.Use(cors.Middleware(cors.Options{
 		AllowOrigins: []string{"*"},
+		AllowHeaders: []string{"x-auth-token", "content-type"},
 	}))
 
 	apiEndpoints := r.Group("/api/v1")
