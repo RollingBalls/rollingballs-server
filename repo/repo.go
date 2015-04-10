@@ -93,7 +93,17 @@ func refreshOpenData() {
 				panic(err)
 			}
 
-			poiCollection.Upsert(bson.M{"name": name}, bson.M{"name": name, "lat": latf, "lon": lonf})
+			var puzzles []string
+
+			if r[5] != "" {
+				puzzles = append(puzzles, r[5])
+			}
+
+			poiCollection.Upsert(bson.M{"name": name}, bson.M{
+				"name": name,
+				"lat":  latf, "lon": lonf,
+				"puzzles": puzzles,
+			})
 		}
 
 		log.Println("CSV refreshed")
