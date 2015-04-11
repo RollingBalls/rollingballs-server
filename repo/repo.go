@@ -71,6 +71,31 @@ func POICoordinates(id string) (types.Coordinates, error) {
 	return poi.Position, nil
 }
 
+func CheckDistance(userCoordinates, targetCoordinates types.Coordinates, threshold uint) (bool, error) {
+	poiCollection := db.C("poi")
+	points := []types.POI{}
+
+	where := bson.M{
+		"$geometry": bson.M{
+			"type":        "Point",
+			"coordinates": []float32{userCoordinates.Lon, userCoordinates.Lat},
+		},
+		"$maxDistance": threshold,
+	}
+
+	if err := poiCollection.Find(bson.M{"position": bson.M{"$near": where}}).All(&points); err != nil {
+		return false, err
+	}
+
+	for _, point := range points {
+		if point.Position == targetCoordinates {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func refreshOpenData() {
 
 	const CSV_URL = "https://docs.google.com/spreadsheets/d/1T02iEmlUdnqEv2gpq_Y200TywLEMoxjI2D2EaBp1c9w/export?gid=0&format=csv"

@@ -10,6 +10,8 @@ import (
 	"strconv"
 )
 
+const WinThreshold = 50
+
 type JSONObject map[string]interface{}
 
 func puzzlesByPositionAndDistance(c *gin.Context) {
@@ -74,12 +76,21 @@ func abortGame(c *gin.Context) {
 func finishGame(c *gin.Context) {
 	var submission PositionSubmission
 	c.BindWith(&submission, binding.JSON)
+	engine := c.MustGet("engine").(*engine.Engine)
 
 	coordinates := types.Coordinates{submission.Lat, submission.Lon}
 
 	if coordinates.Valid() {
-		// TODO: implement
-		c.JSON(http.StatusOK, JSONObject{"win": true})
+		if target, err := engine.Target(c.Request.Header.Get("X-Auth-Token")); err != nil {
+			c.Fail(http.StatusNotFound, err)
+		} else {
+			win, _ := repo.CheckDistance(coordinates, target, WinThreshold)
+			if err := engine.EndGame(c.Request.Header.Get("X-Auth-Token")); err != nil {
+				c.Fail(http.StatusNotFound, err)
+			} else {
+				c.JSON(http.StatusOK, JSONObject{"win": win})
+			}
+		}
 	} else {
 		c.AbortWithStatus(http.StatusBadRequest)
 	}
