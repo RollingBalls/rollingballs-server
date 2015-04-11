@@ -2,15 +2,16 @@ package repo
 
 import (
 	"encoding/csv"
-	"github.com/RollingBalls/rollingballs-server/types"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/RollingBalls/rollingballs-server/types"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var db *mgo.Database
@@ -59,16 +60,16 @@ func Puzzles(coordinatesAndDistance types.CoordinatesAndDistance) ([]map[string]
 	return puzzles, nil
 }
 
-func POICoordinates(id string) (types.Coordinates, error) {
+func POICoordinates(id string) (types.Coordinates, string, error) {
 	poiCollection := db.C("poi")
 	var poi types.POI
 	var coordinates types.Coordinates
 
 	if err := poiCollection.FindId(bson.ObjectIdHex(id)).One(&poi); err != nil {
-		return coordinates, err
+		return coordinates, "", err
 	}
 
-	return poi.Position, nil
+	return poi.Position, poi.Name, nil
 }
 
 func CheckDistance(userCoordinates, targetCoordinates types.Coordinates, threshold uint) (bool, error) {

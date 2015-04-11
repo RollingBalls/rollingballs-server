@@ -1,13 +1,14 @@
 package webserver
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/RollingBalls/rollingballs-server/engine"
 	"github.com/RollingBalls/rollingballs-server/repo"
 	"github.com/RollingBalls/rollingballs-server/types"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"net/http"
-	"strconv"
 )
 
 const WinThreshold = 50
@@ -58,10 +59,10 @@ func startGame(c *gin.Context) {
 	engine := c.MustGet("engine").(*engine.Engine)
 
 	if submission.Id != "" {
-		if coordinates, err := repo.POICoordinates(submission.Id); err != nil {
+		if coordinates, name, err := repo.POICoordinates(submission.Id); err != nil {
 			c.Fail(http.StatusBadRequest, err)
 		} else {
-			seconds := engine.StartGame(c.Request.Header.Get("X-Auth-Token"), coordinates)
+			seconds := engine.StartGame(c.Request.Header.Get("X-Auth-Token"), coordinates, name)
 			c.JSON(http.StatusCreated, JSONObject{"seconds": seconds})
 		}
 	} else {
@@ -81,14 +82,14 @@ func finishGame(c *gin.Context) {
 	coordinates := types.Coordinates{submission.Lat, submission.Lon}
 
 	if coordinates.Valid() {
-		if target, err := engine.Target(c.Request.Header.Get("X-Auth-Token")); err != nil {
+		if target, name, err := engine.Target(c.Request.Header.Get("X-Auth-Token")); err != nil {
 			c.Fail(http.StatusNotFound, err)
 		} else {
 			win, _ := repo.CheckDistance(coordinates, target, WinThreshold)
 			if err := engine.EndGame(c.Request.Header.Get("X-Auth-Token")); err != nil {
 				c.Fail(http.StatusNotFound, err)
 			} else {
-				c.JSON(http.StatusOK, JSONObject{"win": win})
+				c.JSON(http.StatusOK, JSONObject{"win": win, "poi": name})
 			}
 		}
 	} else {

@@ -2,14 +2,16 @@ package engine
 
 import (
 	"errors"
-	"github.com/RollingBalls/rollingballs-server/types"
 	"math/rand"
 	"time"
+
+	"github.com/RollingBalls/rollingballs-server/types"
 )
 
 type game struct {
-	startTime time.Time
-	target    types.Coordinates
+	startTime  time.Time
+	target     types.Coordinates
+	targetName string
 }
 
 type Engine struct {
@@ -23,16 +25,16 @@ func New() (engine *Engine) {
 	return
 }
 
-func (engine *Engine) Target(userToken string) (types.Coordinates, error) {
+func (engine *Engine) Target(userToken string) (types.Coordinates, string, error) {
 	if engine.games[userToken] == nil {
-		return types.Coordinates{}, errors.New("Not Found")
+		return types.Coordinates{}, "", errors.New("Not Found")
 	}
 
-	return engine.games[userToken].target, nil
+	return engine.games[userToken].target, engine.games[userToken].targetName, nil
 }
 
-func (engine *Engine) StartGame(userToken string, targetCoordinates types.Coordinates) uint {
-	engine.games[userToken] = &game{time.Now(), targetCoordinates}
+func (engine *Engine) StartGame(userToken string, targetCoordinates types.Coordinates, targetName string) uint {
+	engine.games[userToken] = &game{time.Now(), targetCoordinates, targetName}
 
 	return uint(rand.Intn(30) + 30)
 }
